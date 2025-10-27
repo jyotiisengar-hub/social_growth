@@ -1,8 +1,10 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { Header } from './components/Header';
 import { InputForm } from './components/InputForm';
 import { PostCard } from './components/PostCard';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { AgenticLearningLoop } from './components/AgenticLearningLoop';
 import { generatePlan, regenerateAlternatives } from './services/geminiService';
 import { SocialPlan, UserInput, SocialPost } from './types';
 
@@ -14,12 +16,14 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [dmCopied, setDmCopied] = useState<boolean>(false);
   const [replyCopied, setReplyCopied] = useState<boolean>(false);
+  const [platformFilter, setPlatformFilter] = useState<string>('All');
 
   const handleGeneratePlan = useCallback(async (userInput: UserInput) => {
     setIsLoading(true);
     setError(null);
     setSocialPlan(null);
     setCurrentUserInput(userInput);
+    setPlatformFilter('All');
 
     try {
       const plan = await generatePlan(userInput);
@@ -61,6 +65,7 @@ const App: React.FC = () => {
         const plan = await regenerateAlternatives(currentUserInput, socialPlan.posts);
         if (plan && plan.posts && plan.posts.length > 0) {
             setSocialPlan(plan);
+            setPlatformFilter('All');
         } else {
             setError('The regenerated plan was empty. Please try again.');
         }
@@ -92,30 +97,64 @@ const App: React.FC = () => {
   const hasFeedback = useMemo(() => {
     return socialPlan?.posts.some(p => p.feedback) ?? false;
   }, [socialPlan]);
+  
+  const platforms = useMemo(() => {
+    if (!socialPlan?.posts) return [];
+    const uniquePlatforms = [...new Set(socialPlan.posts.map(p => p.platform))];
+    return ['All', ...uniquePlatforms];
+  }, [socialPlan]);
+
+  const filteredPosts = useMemo(() => {
+    if (!socialPlan?.posts) return [];
+    if (platformFilter === 'All') {
+        return socialPlan.posts;
+    }
+    return socialPlan.posts.filter(post => post.platform === platformFilter);
+  }, [socialPlan, platformFilter]);
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 font-sans">
       <main className="container mx-auto px-4 py-8 md:py-12">
         <Header />
         <div className="max-w-3xl mx-auto mt-8">
-          <InputForm onGenerate={handleGeneratePlan} isLoading={isLoading} />
+          <InputForm onGenerate={handleGeneratePlan} isLoading={isLoading || isRegenerating} />
           <div className="mt-12">
             {isLoading && <LoadingSpinner />}
+            {isRegenerating && socialPlan && <AgenticLearningLoop socialPlan={socialPlan} />}
             {error && (
               <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg text-center mb-6">
                 <p className="font-bold">An Error Occurred</p>
                 <p className="text-sm">{error}</p>
               </div>
             )}
-            {socialPlan && (
+            {socialPlan && !isLoading && !isRegenerating && (
               <div className="space-y-8">
                 <div className="text-center p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
                     <h2 className="text-xl font-bold text-indigo-400">This Week's Mission</h2>
                     <p className="text-slate-300 text-lg mt-1">{socialPlan.week_plan}</p>
                 </div>
 
+                {platforms.length > 2 && (
+                    <div className="flex justify-center flex-wrap items-center gap-3">
+                        {platforms.map(platform => (
+                            <button
+                                key={platform}
+                                onClick={() => setPlatformFilter(platform)}
+                                className={`px-4 py-2 text-sm font-medium rounded-full transition-colors duration-200 ${
+                                    platformFilter === platform
+                                        ? 'bg-indigo-600 text-white shadow-lg border border-transparent'
+                                        : 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-slate-100'
+                                }`}
+                                aria-pressed={platformFilter === platform}
+                            >
+                                {platform}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 <div className="space-y-6">
-                  {socialPlan.posts.map((post) => (
+                  {filteredPosts.map((post) => (
                     <PostCard key={post.id} post={post} onFeedback={handleFeedback} />
                   ))}
                 </div>
@@ -185,7 +224,7 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
-            {!isLoading && !error && !socialPlan && (
+            {!isLoading && !isRegenerating && !error && !socialPlan && (
                <div className="text-center text-slate-500 py-16">
                  <i className="fa-solid fa-wand-magic-sparkles text-4xl mb-4"></i>
                  <p>Your social media plan will appear here.</p>
