@@ -129,9 +129,9 @@ const App: React.FC = () => {
     if (!socialPlan) return null;
     return (
       <div className="space-y-8">
-        <div className="text-center p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
-            <h2 className="text-xl font-bold text-indigo-400">This Week's Mission</h2>
-            <p className="text-slate-300 text-lg mt-1">{socialPlan.week_plan}</p>
+        <div className="text-center p-6 bg-white border border-slate-200 rounded-xl">
+            <h2 className="text-xl font-bold text-indigo-600">This Week's Mission</h2>
+            <p className="text-slate-700 text-lg mt-1">{socialPlan.week_plan}</p>
         </div>
 
         {platforms.length > 2 && (
@@ -143,7 +143,7 @@ const App: React.FC = () => {
                         className={`px-4 py-2 text-sm font-medium rounded-full transition-colors duration-200 ${
                             platformFilter === platform
                                 ? 'bg-indigo-600 text-white shadow-lg border border-transparent'
-                                : 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-slate-100'
+                                : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
                         }`}
                         aria-pressed={platformFilter === platform}
                     >
@@ -164,7 +164,7 @@ const App: React.FC = () => {
                 <button 
                     onClick={handleRegenerate}
                     disabled={isRegenerating}
-                    className="w-full md:w-auto flex justify-center items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-md transition-all duration-300 disabled:bg-purple-800 disabled:cursor-not-allowed"
+                    className="w-full md:w-auto flex justify-center items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-md transition-all duration-300 disabled:bg-purple-400 disabled:cursor-not-allowed"
                 >
                     {isRegenerating ? (
                         <>
@@ -185,41 +185,41 @@ const App: React.FC = () => {
         )}
 
         <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 relative">
-                <h3 className="text-lg font-bold text-teal-400 mb-3">Outreach DM Template</h3>
-                <p className="text-slate-300 whitespace-pre-wrap text-sm">{socialPlan.dm_template}</p>
+            <div className="bg-white border border-slate-200 rounded-xl p-5 relative">
+                <h3 className="text-lg font-bold text-teal-600 mb-3">Outreach DM Template</h3>
+                <p className="text-slate-700 whitespace-pre-wrap text-sm">{socialPlan.dm_template}</p>
                 <button
                     onClick={handleCopyDM}
                     className={`absolute top-4 right-4 px-3 py-1 text-xs rounded-md transition-colors ${
                     dmCopied
                         ? 'bg-green-600 text-white'
-                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                        : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
                     }`}
                 >
                     {dmCopied ? <><i className="fa-solid fa-check mr-2"></i>Copied</> : <><i className="fa-regular fa-copy mr-2"></i>Copy</>}
                 </button>
             </div>
-             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 relative">
-                <h3 className="text-lg font-bold text-cyan-400 mb-3">Comment Reply Template</h3>
-                <p className="text-slate-300 whitespace-pre-wrap text-sm">{socialPlan.comment_reply_template}</p>
+             <div className="bg-white border border-slate-200 rounded-xl p-5 relative">
+                <h3 className="text-lg font-bold text-cyan-600 mb-3">Comment Reply Template</h3>
+                <p className="text-slate-700 whitespace-pre-wrap text-sm">{socialPlan.comment_reply_template}</p>
                 <button
                     onClick={handleCopyReply}
                     className={`absolute top-4 right-4 px-3 py-1 text-xs rounded-md transition-colors ${
                     replyCopied
                         ? 'bg-green-600 text-white'
-                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                        : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
                     }`}
                 >
                     {replyCopied ? <><i className="fa-solid fa-check mr-2"></i>Copied</> : <><i className="fa-regular fa-copy mr-2"></i>Copy</>}
                 </button>
             </div>
-             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-                <h3 className="text-lg font-bold text-yellow-400 mb-3">This Week's Experiment</h3>
-                <p className="text-slate-300 whitespace-pre-wrap text-sm">{socialPlan.weekly_experiment}</p>
+             <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h3 className="text-lg font-bold text-yellow-600 mb-3">This Week's Experiment</h3>
+                <p className="text-slate-700 whitespace-pre-wrap text-sm">{socialPlan.weekly_experiment}</p>
             </div>
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-                <h3 className="text-lg font-bold text-purple-400 mb-3">AI Observations</h3>
-                <p className="text-slate-300 whitespace-pre-wrap text-sm">{socialPlan.observations}</p>
+            <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h3 className="text-lg font-bold text-purple-600 mb-3">AI Observations</h3>
+                <p className="text-slate-700 whitespace-pre-wrap text-sm">{socialPlan.observations}</p>
             </div>
         </div>
       </div>
@@ -243,7 +243,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 font-sans">
+    <div className="min-h-screen bg-slate-100 text-slate-800 font-sans">
       <main className="container mx-auto px-4 py-8 md:py-12">
         <Header />
         <div className="max-w-3xl mx-auto mt-8">
@@ -252,38 +252,38 @@ const App: React.FC = () => {
             {isLoading && <LoadingSpinner />}
             {isRegenerating && socialPlan && <AgenticLearningLoop socialPlan={socialPlan} />}
             {error && (
-              <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg text-center mb-6">
+              <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-center mb-6">
                 <p className="font-bold">An Error Occurred</p>
                 <p className="text-sm">{error}</p>
               </div>
             )}
             {fullStrategy && !isLoading && !isRegenerating && (
                 <div>
-                    <div className="mb-8 flex justify-center border-b border-slate-700">
+                    <div className="mb-8 flex justify-center border-b border-slate-300">
                         <button 
                             onClick={() => setActiveTab('mission')}
-                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'mission' ? 'text-indigo-400 border-indigo-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'mission' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
                             aria-current={activeTab === 'mission' ? 'page' : undefined}
                         >
                             This Week's Mission
                         </button>
                         <button 
                             onClick={() => setActiveTab('performance')}
-                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'performance' ? 'text-indigo-400 border-indigo-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'performance' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
                              aria-current={activeTab === 'performance' ? 'page' : undefined}
                         >
                             Last Week's Performance
                         </button>
                          <button 
                             onClick={() => setActiveTab('strategy')}
-                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'strategy' ? 'text-indigo-400 border-indigo-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'strategy' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
                              aria-current={activeTab === 'strategy' ? 'page' : undefined}
                         >
                             Multi-Platform Strategy
                         </button>
                          <button 
                             onClick={() => setActiveTab('nextAction')}
-                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'nextAction' ? 'text-indigo-400 border-indigo-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'nextAction' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
                              aria-current={activeTab === 'nextAction' ? 'page' : undefined}
                         >
                             Next Best Action
