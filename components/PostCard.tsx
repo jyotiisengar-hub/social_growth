@@ -43,6 +43,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onFeedback }) => {
     return `${baseClasses} bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200`;
   };
 
+  const showFeedback = !!onFeedback;
+
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:border-indigo-600/50 hover:shadow-indigo-900/20">
       <div className="p-5">
@@ -72,6 +74,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onFeedback }) => {
           </div>
           
           <div className="pt-4 border-t border-slate-700/50 space-y-3">
+            {post.insight && (
+                <div className="text-sm bg-blue-900/40 p-3 rounded-lg border border-blue-700/60 text-blue-200 flex items-start gap-3">
+                    <i className="fa-solid fa-magnifying-glass-chart mt-1 text-blue-400"></i>
+                    <div><span className="font-semibold">Insight:</span> {post.insight}</div>
+                </div>
+            )}
+            {post.change && (
+                <div className="text-sm bg-purple-900/40 p-3 rounded-lg border border-purple-700/60 text-purple-200 flex items-start gap-3">
+                    <i className="fa-solid fa-wand-magic-sparkles mt-1 text-purple-400"></i>
+                    <div><span className="font-semibold">Change:</span> {post.change}</div>
+                </div>
+            )}
             <div className="flex flex-wrap items-center gap-2">
                 <InfoPill icon="fa-regular fa-clock" label="Time" value={post.suggested_time} colorClass="text-cyan-300" />
                 <InfoPill icon="fa-solid fa-arrow-trend-up" label="Impact" value={`${post.impact_score}/10`} colorClass="text-amber-300" />
@@ -91,17 +105,19 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onFeedback }) => {
           </div>
         </div>
       </div>
-      <div className="bg-slate-800/50 px-5 py-3 border-t border-slate-700/50 flex items-center justify-end gap-3">
-        <span className="text-xs text-slate-500 mr-2">Was this suggestion helpful?</span>
-        <button onClick={() => onFeedback(post.id, 'useful')} className={getFeedbackButtonStyle('useful')}>
-            <i className="fa-solid fa-thumbs-up"></i>
-            Useful
-        </button>
-        <button onClick={() => onFeedback(post.id, 'not useful')} className={getFeedbackButtonStyle('not useful')}>
-            <i className="fa-solid fa-thumbs-down"></i>
-            Not Useful
-        </button>
-      </div>
+      {showFeedback && (
+        <div className="bg-slate-800/50 px-5 py-3 border-t border-slate-700/50 flex items-center justify-end gap-3">
+            <span className="text-xs text-slate-500 mr-2">Was this suggestion helpful?</span>
+            <button onClick={() => onFeedback(post.id, 'useful')} className={getFeedbackButtonStyle('useful')}>
+                <i className="fa-solid fa-thumbs-up"></i>
+                Useful
+            </button>
+            <button onClick={() => onFeedback(post.id, 'not useful')} className={getFeedbackButtonStyle('not useful')}>
+                <i className="fa-solid fa-thumbs-down"></i>
+                Not Useful
+            </button>
+        </div>
+      )}
     </div>
   );
 };

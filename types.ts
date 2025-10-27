@@ -20,6 +20,8 @@ export interface SocialPost {
   impact_score: number;
   simple_test_idea: string;
   feedback?: 'useful' | 'not useful';
+  insight?: string;
+  change?: string;
 }
 
 export interface SocialPlan {
