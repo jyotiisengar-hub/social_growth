@@ -7,11 +7,11 @@ import { AgenticLearningLoop } from './components/AgenticLearningLoop';
 import { PerformanceAnalysis } from './components/PerformanceAnalysis';
 import { MultiPlatformStrategy } from './components/MultiPlatformStrategy';
 import { NextBestAction } from './components/NextBestAction';
-import { generatePlan, regenerateAlternatives } from './services/geminiService';
-import { SocialPlan, UserInput } from './types';
+import { generateFullStrategy, regenerateAlternatives } from './services/geminiService';
+import { FullStrategy, SocialPlan, UserInput } from './types';
 
 const App: React.FC = () => {
-  const [socialPlan, setSocialPlan] = useState<SocialPlan | null>(null);
+  const [fullStrategy, setFullStrategy] = useState<FullStrategy | null>(null);
   const [currentUserInput, setCurrentUserInput] = useState<UserInput | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
@@ -21,23 +21,25 @@ const App: React.FC = () => {
   const [platformFilter, setPlatformFilter] = useState<string>('All');
   const [activeTab, setActiveTab] = useState<'mission' | 'performance' | 'strategy' | 'nextAction'>('mission');
 
+  const socialPlan = useMemo(() => fullStrategy?.socialPlan, [fullStrategy]);
+
   const handleGeneratePlan = useCallback(async (userInput: UserInput) => {
     setIsLoading(true);
     setError(null);
-    setSocialPlan(null);
+    setFullStrategy(null);
     setCurrentUserInput(userInput);
     setPlatformFilter('All');
     setActiveTab('mission');
 
     try {
-      const plan = await generatePlan(userInput);
-      if (plan && plan.posts && plan.posts.length > 0) {
-        setSocialPlan(plan);
+      const strategy = await generateFullStrategy(userInput);
+      if (strategy && strategy.socialPlan && strategy.socialPlan.posts.length > 0) {
+        setFullStrategy(strategy);
       } else {
-        setError('The generated plan was empty. Please try refining your request.');
+        setError('The generated strategy was empty. Please try refining your request.');
       }
     } catch (err) {
-      setError('Failed to generate social media plan. Please check your connection and API key.');
+      setError('Failed to generate social media strategy. Please check your connection and API key.');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -45,17 +47,20 @@ const App: React.FC = () => {
   }, []);
 
   const handleFeedback = useCallback((postId: string, feedback: 'useful' | 'not useful') => {
-    setSocialPlan(currentPlan => {
-        if (!currentPlan) return null;
+    setFullStrategy(currentStrategy => {
+        if (!currentStrategy) return null;
+        const updatedPosts = currentStrategy.socialPlan.posts.map(post => {
+            if (post.id === postId) {
+                return { ...post, feedback: post.feedback === feedback ? undefined : feedback };
+            }
+            return post;
+        });
         return {
-            ...currentPlan,
-            posts: currentPlan.posts.map(post => {
-                if (post.id === postId) {
-                    // If clicking the same feedback again, toggle it off.
-                    return { ...post, feedback: post.feedback === feedback ? undefined : feedback };
-                }
-                return post;
-            })
+            ...currentStrategy,
+            socialPlan: {
+                ...currentStrategy.socialPlan,
+                posts: updatedPosts,
+            }
         };
     });
   }, []);
@@ -66,9 +71,12 @@ const App: React.FC = () => {
     setIsRegenerating(true);
     setError(null);
     try {
-        const plan = await regenerateAlternatives(currentUserInput, socialPlan.posts);
-        if (plan && plan.posts && plan.posts.length > 0) {
-            setSocialPlan(plan);
+        const regeneratedPlan = await regenerateAlternatives(currentUserInput, socialPlan.posts);
+        if (regeneratedPlan && regeneratedPlan.posts && regeneratedPlan.posts.length > 0) {
+            setFullStrategy(currentStrategy => {
+              if (!currentStrategy) return null; // Should not happen
+              return { ...currentStrategy, socialPlan: regeneratedPlan };
+            });
             setPlatformFilter('All');
             setActiveTab('mission');
         } else {
@@ -219,15 +227,16 @@ const App: React.FC = () => {
   }
 
   const renderActiveTab = () => {
+    if (!fullStrategy) return null;
     switch(activeTab) {
         case 'mission':
             return renderPlanContent();
         case 'performance':
-            return <PerformanceAnalysis />;
+            return <PerformanceAnalysis data={fullStrategy.performanceAnalysis} />;
         case 'strategy':
-            return <MultiPlatformStrategy />;
+            return <MultiPlatformStrategy data={fullStrategy.multiPlatformStrategy} />;
         case 'nextAction':
-            return <NextBestAction />;
+            return <NextBestAction data={fullStrategy.nextBestAction} />;
         default:
             return renderPlanContent();
     }
@@ -248,7 +257,7 @@ const App: React.FC = () => {
                 <p className="text-sm">{error}</p>
               </div>
             )}
-            {socialPlan && !isLoading && !isRegenerating && (
+            {fullStrategy && !isLoading && !isRegenerating && (
                 <div>
                     <div className="mb-8 flex justify-center border-b border-slate-700">
                         <button 
@@ -284,7 +293,7 @@ const App: React.FC = () => {
                     {renderActiveTab()}
                 </div>
             )}
-            {!isLoading && !isRegenerating && !error && !socialPlan && (
+            {!isLoading && !isRegenerating && !error && !fullStrategy && (
                <div className="text-center text-slate-500 py-16">
                  <i className="fa-solid fa-wand-magic-sparkles text-4xl mb-4"></i>
                  <p>Your social media plan will appear here.</p>
