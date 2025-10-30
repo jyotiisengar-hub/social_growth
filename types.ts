@@ -9,6 +9,7 @@ export interface UserInput {
   tone: string;
   platform: string;
   audience: string;
+  socialMediaLink?: string;
 }
 
 export interface SocialPost {

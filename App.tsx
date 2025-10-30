@@ -1,307 +1,151 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Header } from './components/Header';
 import { InputForm } from './components/InputForm';
-import { PostCard } from './components/PostCard';
+import { Board } from './components/Board';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { AgenticLearningLoop } from './components/AgenticLearningLoop';
-import { PerformanceAnalysis } from './components/PerformanceAnalysis';
-import { MultiPlatformStrategy } from './components/MultiPlatformStrategy';
-import { NextBestAction } from './components/NextBestAction';
-import { generateFullStrategy, regenerateAlternatives } from './services/geminiService';
-import { FullStrategy, SocialPlan, UserInput } from './types';
+import { FutureVision } from './components/FutureVision';
+import { SidebarNav } from './components/SidebarNav';
+import { generateFullStrategy, extractDetailsFromPrompt } from './services/geminiService';
+import { FullStrategy, UserInput } from './types';
+
+const Tile: React.FC<{ title: string; description: string; }> = ({ title, description }) => (
+    <div className="bg-white border border-slate-200 rounded-xl p-4 transition-all duration-300 hover:border-indigo-400 hover:shadow-lg hover:-translate-y-1 cursor-pointer">
+        <h4 className="font-bold text-slate-800">{title}</h4>
+        <p className="text-sm text-slate-500 mt-1">{description}</p>
+    </div>
+);
+
+const SmartSetupTiles = () => (
+  <section>
+      <h3 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-3">
+          <span className="text-2xl">💠</span>
+          Smart Setup
+      </h3>
+      <div className="grid grid-cols-1 gap-4">
+          <Tile title="🏪 Business Snapshot" description="Auto-detect your business info from your website or Instagram bio." />
+          <Tile title="🎯 Growth Goal" description="Select what matters most: Leads · Engagement · Brand Visibility." />
+          <Tile title="🎨 Tone & Style" description="Define your brand personality — warm, bold, or expert." />
+      </div>
+  </section>
+);
+
 
 const App: React.FC = () => {
+  const [activeView, setActiveView] = useState<'home' | 'progress' | 'vision'>('home');
   const [fullStrategy, setFullStrategy] = useState<FullStrategy | null>(null);
   const [currentUserInput, setCurrentUserInput] = useState<UserInput | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [dmCopied, setDmCopied] = useState<boolean>(false);
-  const [replyCopied, setReplyCopied] = useState<boolean>(false);
-  const [platformFilter, setPlatformFilter] = useState<string>('All');
-  const [activeTab, setActiveTab] = useState<'mission' | 'performance' | 'strategy' | 'nextAction'>('mission');
 
-  const socialPlan = useMemo(() => fullStrategy?.socialPlan, [fullStrategy]);
-
-  const handleGeneratePlan = useCallback(async (userInput: UserInput) => {
+  const handleGeneratePlan = useCallback(async (userInput: UserInput | string) => {
     setIsLoading(true);
     setError(null);
     setFullStrategy(null);
-    setCurrentUserInput(userInput);
-    setPlatformFilter('All');
-    setActiveTab('mission');
+    // Stay on home view while loading
+    setActiveView('home');
 
     try {
-      const strategy = await generateFullStrategy(userInput);
+      let structuredInput: UserInput;
+      if (typeof userInput === 'string') {
+        structuredInput = await extractDetailsFromPrompt(userInput);
+      } else {
+        structuredInput = userInput;
+      }
+      setCurrentUserInput(structuredInput);
+
+      const strategy = await generateFullStrategy(structuredInput);
       if (strategy && strategy.socialPlan && strategy.socialPlan.posts.length > 0) {
         setFullStrategy(strategy);
+        setActiveView('progress');
       } else {
         setError('The generated strategy was empty. Please try refining your request.');
+        setActiveView('home');
       }
     } catch (err) {
-      setError('Failed to generate social media strategy. Please check your connection and API key.');
+      setError('Failed to generate social media strategy. Please check your prompt or form details and try again.');
       console.error(err);
+      setActiveView('home');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const handleFeedback = useCallback((postId: string, feedback: 'useful' | 'not useful') => {
-    setFullStrategy(currentStrategy => {
-        if (!currentStrategy) return null;
-        const updatedPosts = currentStrategy.socialPlan.posts.map(post => {
-            if (post.id === postId) {
-                return { ...post, feedback: post.feedback === feedback ? undefined : feedback };
-            }
-            return post;
-        });
-        return {
-            ...currentStrategy,
-            socialPlan: {
-                ...currentStrategy.socialPlan,
-                posts: updatedPosts,
-            }
-        };
-    });
-  }, []);
-
-  const handleRegenerate = useCallback(async () => {
-    if (!currentUserInput || !socialPlan) return;
-
-    setIsRegenerating(true);
+  const handleStartOver = () => {
+    setActiveView('home');
+    setFullStrategy(null);
+    setCurrentUserInput(null);
     setError(null);
-    try {
-        const regeneratedPlan = await regenerateAlternatives(currentUserInput, socialPlan.posts);
-        if (regeneratedPlan && regeneratedPlan.posts && regeneratedPlan.posts.length > 0) {
-            setFullStrategy(currentStrategy => {
-              if (!currentStrategy) return null; // Should not happen
-              return { ...currentStrategy, socialPlan: regeneratedPlan };
-            });
-            setPlatformFilter('All');
-            setActiveTab('mission');
-        } else {
-            setError('The regenerated plan was empty. Please try again.');
-        }
-    } catch (err) {
-        setError('Failed to regenerate the plan. Please try again.');
-        console.error(err);
-    } finally {
-        setIsRegenerating(false);
-    }
-  }, [currentUserInput, socialPlan]);
-
-
-  const handleCopyDM = useCallback(() => {
-    if (socialPlan?.dm_template) {
-      navigator.clipboard.writeText(socialPlan.dm_template);
-      setDmCopied(true);
-      setTimeout(() => setDmCopied(false), 2000);
-    }
-  }, [socialPlan]);
-
-  const handleCopyReply = useCallback(() => {
-    if (socialPlan?.comment_reply_template) {
-      navigator.clipboard.writeText(socialPlan.comment_reply_template);
-      setReplyCopied(true);
-      setTimeout(() => setReplyCopied(false), 2000);
-    }
-  }, [socialPlan]);
-
-  const hasFeedback = useMemo(() => {
-    return socialPlan?.posts.some(p => p.feedback) ?? false;
-  }, [socialPlan]);
+  };
   
-  const platforms = useMemo(() => {
-    if (!socialPlan?.posts) return [];
-    const uniquePlatforms = [...new Set(socialPlan.posts.map(p => p.platform))];
-    return ['All', ...uniquePlatforms];
-  }, [socialPlan]);
+  const handleEditPlan = () => {
+    setActiveView('home');
+  };
 
-  const filteredPosts = useMemo(() => {
-    if (!socialPlan?.posts) return [];
-    if (platformFilter === 'All') {
-        return socialPlan.posts;
-    }
-    return socialPlan.posts.filter(post => post.platform === platformFilter);
-  }, [socialPlan, platformFilter]);
-
-  const renderPlanContent = () => {
-    if (!socialPlan) return null;
-    return (
-      <div className="space-y-8">
-        <div className="text-center p-6 bg-white border border-slate-200 rounded-xl">
-            <h2 className="text-xl font-bold text-indigo-600">This Week's Mission</h2>
-            <p className="text-slate-700 text-lg mt-1">{socialPlan.week_plan}</p>
+  const renderHome = () => (
+    <>
+      <Header />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 max-w-6xl mx-auto">
+        <div className="lg:col-span-2">
+            <InputForm onGenerate={handleGeneratePlan} isLoading={isLoading} initialData={currentUserInput} />
+            <div className="mt-12">
+               {isLoading && <LoadingSpinner />}
+               {error && (
+                  <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-center mb-6 animate-fade-in">
+                    <p className="font-bold">An Error Occurred</p>
+                    <p className="text-sm">{error}</p>
+                  </div>
+                )}
+               {!isLoading && !fullStrategy && !error && (
+                   <div className="text-center text-slate-500 py-16">
+                     <i className="fa-solid fa-wand-magic-sparkles text-4xl mb-4"></i>
+                     <p>Your social media plan will appear here.</p>
+                     <p className="text-sm">Fill out the form above to get started!</p>
+                   </div>
+                )}
+            </div>
         </div>
-
-        {platforms.length > 2 && (
-            <div className="flex justify-center flex-wrap items-center gap-3">
-                {platforms.map(platform => (
-                    <button
-                        key={platform}
-                        onClick={() => setPlatformFilter(platform)}
-                        className={`px-4 py-2 text-sm font-medium rounded-full transition-colors duration-200 ${
-                            platformFilter === platform
-                                ? 'bg-indigo-600 text-white shadow-lg border border-transparent'
-                                : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
-                        }`}
-                        aria-pressed={platformFilter === platform}
-                    >
-                        {platform}
-                    </button>
-                ))}
-            </div>
-        )}
-
-        <div className="space-y-6">
-          {filteredPosts.map((post) => (
-            <PostCard key={post.id} post={post} onFeedback={handleFeedback} />
-          ))}
-        </div>
-
-        {hasFeedback && (
-            <div className="text-center pt-4">
-                <button 
-                    onClick={handleRegenerate}
-                    disabled={isRegenerating}
-                    className="w-full md:w-auto flex justify-center items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-md transition-all duration-300 disabled:bg-purple-400 disabled:cursor-not-allowed"
-                >
-                    {isRegenerating ? (
-                        <>
-                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Regenerating...
-                        </>
-                    ) : (
-                        <>
-                            <i className="fa-solid fa-arrows-rotate"></i>
-                            Regenerate Alternatives Based on Feedback
-                        </>
-                    )}
-                </button>
-            </div>
-        )}
-
-        <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white border border-slate-200 rounded-xl p-5 relative">
-                <h3 className="text-lg font-bold text-teal-600 mb-3">Outreach DM Template</h3>
-                <p className="text-slate-700 whitespace-pre-wrap text-sm">{socialPlan.dm_template}</p>
-                <button
-                    onClick={handleCopyDM}
-                    className={`absolute top-4 right-4 px-3 py-1 text-xs rounded-md transition-colors ${
-                    dmCopied
-                        ? 'bg-green-600 text-white'
-                        : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                    }`}
-                >
-                    {dmCopied ? <><i className="fa-solid fa-check mr-2"></i>Copied</> : <><i className="fa-regular fa-copy mr-2"></i>Copy</>}
-                </button>
-            </div>
-             <div className="bg-white border border-slate-200 rounded-xl p-5 relative">
-                <h3 className="text-lg font-bold text-cyan-600 mb-3">Comment Reply Template</h3>
-                <p className="text-slate-700 whitespace-pre-wrap text-sm">{socialPlan.comment_reply_template}</p>
-                <button
-                    onClick={handleCopyReply}
-                    className={`absolute top-4 right-4 px-3 py-1 text-xs rounded-md transition-colors ${
-                    replyCopied
-                        ? 'bg-green-600 text-white'
-                        : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                    }`}
-                >
-                    {replyCopied ? <><i className="fa-solid fa-check mr-2"></i>Copied</> : <><i className="fa-regular fa-copy mr-2"></i>Copy</>}
-                </button>
-            </div>
-             <div className="bg-white border border-slate-200 rounded-xl p-5">
-                <h3 className="text-lg font-bold text-yellow-600 mb-3">This Week's Experiment</h3>
-                <p className="text-slate-700 whitespace-pre-wrap text-sm">{socialPlan.weekly_experiment}</p>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-                <h3 className="text-lg font-bold text-purple-600 mb-3">AI Observations</h3>
-                <p className="text-slate-700 whitespace-pre-wrap text-sm">{socialPlan.observations}</p>
-            </div>
+        <div className="lg:col-span-1 hidden lg:block pt-2">
+            <SmartSetupTiles />
         </div>
       </div>
-    );
-  }
+    </>
+  );
 
-  const renderActiveTab = () => {
-    if (!fullStrategy) return null;
-    switch(activeTab) {
-        case 'mission':
-            return renderPlanContent();
-        case 'performance':
-            return <PerformanceAnalysis data={fullStrategy.performanceAnalysis} />;
-        case 'strategy':
-            return <MultiPlatformStrategy data={fullStrategy.multiPlatformStrategy} />;
-        case 'nextAction':
-            return <NextBestAction data={fullStrategy.nextBestAction} />;
-        default:
-            return renderPlanContent();
+  const renderContent = () => {
+    if (isLoading && activeView === 'home') {
+      return renderHome();
+    }
+    switch (activeView) {
+      case 'home':
+        return renderHome();
+      case 'progress':
+        if (fullStrategy && currentUserInput) {
+          return <Board 
+            fullStrategy={fullStrategy} 
+            userInput={currentUserInput} 
+            onStartOver={handleStartOver}
+            onEditPlan={handleEditPlan} 
+          />
+        }
+        // Fallback to home if progress isn't ready
+        setActiveView('home');
+        return renderHome();
+      case 'vision':
+        return <FutureVision />;
+      default:
+        return renderHome();
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 font-sans">
-      <main className="container mx-auto px-4 py-8 md:py-12">
-        <Header />
-        <div className="max-w-3xl mx-auto mt-8">
-          <InputForm onGenerate={handleGeneratePlan} isLoading={isLoading || isRegenerating} />
-          <div className="mt-12">
-            {isLoading && <LoadingSpinner />}
-            {isRegenerating && socialPlan && <AgenticLearningLoop socialPlan={socialPlan} />}
-            {error && (
-              <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-center mb-6">
-                <p className="font-bold">An Error Occurred</p>
-                <p className="text-sm">{error}</p>
-              </div>
-            )}
-            {fullStrategy && !isLoading && !isRegenerating && (
-                <div>
-                    <div className="mb-8 flex justify-center border-b border-slate-300">
-                        <button 
-                            onClick={() => setActiveTab('mission')}
-                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'mission' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
-                            aria-current={activeTab === 'mission' ? 'page' : undefined}
-                        >
-                            This Week's Mission
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('performance')}
-                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'performance' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
-                             aria-current={activeTab === 'performance' ? 'page' : undefined}
-                        >
-                            Last Week's Performance
-                        </button>
-                         <button 
-                            onClick={() => setActiveTab('strategy')}
-                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'strategy' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
-                             aria-current={activeTab === 'strategy' ? 'page' : undefined}
-                        >
-                            Multi-Platform Strategy
-                        </button>
-                         <button 
-                            onClick={() => setActiveTab('nextAction')}
-                            className={`px-6 py-3 text-sm font-bold transition-colors duration-200 border-b-2 ${activeTab === 'nextAction' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
-                             aria-current={activeTab === 'nextAction' ? 'page' : undefined}
-                        >
-                            Next Best Action
-                        </button>
-                    </div>
-
-                    {renderActiveTab()}
-                </div>
-            )}
-            {!isLoading && !isRegenerating && !error && !fullStrategy && (
-               <div className="text-center text-slate-500 py-16">
-                 <i className="fa-solid fa-wand-magic-sparkles text-4xl mb-4"></i>
-                 <p>Your social media plan will appear here.</p>
-                 <p className="text-sm">Fill out the form above to get started!</p>
-               </div>
-            )}
-          </div>
-        </div>
+    <div className="min-h-screen bg-slate-100 text-slate-800 font-sans flex">
+      <SidebarNav 
+        activeView={activeView}
+        setActiveView={setActiveView}
+        isProgressAvailable={!!fullStrategy}
+      />
+      <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
+        {renderContent()}
       </main>
     </div>
   );

@@ -172,6 +172,63 @@ const fullStrategySchema = {
     required: ["socialPlan", "performanceAnalysis", "multiPlatformStrategy", "nextBestAction"]
 };
 
+// ========== User Input Schema for Prompt Parsing ==========
+const userInputSchema = {
+    type: Type.OBJECT,
+    properties: {
+        businessName: { type: Type.STRING },
+        category: { type: Type.STRING },
+        product: { type: Type.STRING },
+        city: { type: Type.STRING },
+        goal: { type: Type.STRING },
+        tone: { type: Type.STRING },
+        platform: { type: Type.STRING },
+        audience: { type: Type.STRING },
+        socialMediaLink: { type: Type.STRING, description: "A link to the business's primary social media page, if available." },
+    },
+    required: ["businessName", "category", "product", "city", "goal", "tone", "platform", "audience"]
+};
+
+export const extractDetailsFromPrompt = async (prompt: string): Promise<UserInput> => {
+    const generationPrompt = `
+        Analyze the following user-provided business description and extract the specified details.
+        The output must be a single, valid JSON object that adheres to the provided schema.
+        If a detail is not explicitly mentioned, make a reasonable inference based on the context.
+
+        User's business description:
+        "${prompt}"
+
+        Extract the following fields:
+        - businessName: The name of the business.
+        - category: The industry or category the business belongs to.
+        - product: The primary product or service offered.
+        - city: The city where the business is located.
+        - goal: The main business objective for their social media.
+        - tone: The desired tone of voice for their posts.
+        - platform: The primary social media platform they want to focus on.
+        - audience: The target audience for their content.
+        - socialMediaLink: A link to their social media profile if mentioned.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: generationPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: userInputSchema,
+                temperature: 0.2, 
+            }
+        });
+        
+        const jsonStr = response.text.trim();
+        return JSON.parse(jsonStr) as UserInput;
+    } catch (error) {
+        console.error("Error extracting details from prompt:", error);
+        throw new Error("Could not extract business details from the provided prompt.");
+    }
+};
+
 const callGeminiApi = async (prompt: string): Promise<FullStrategy> => {
     try {
         const response = await ai.models.generateContent({
@@ -199,7 +256,11 @@ const callGeminiApi = async (prompt: string): Promise<FullStrategy> => {
 }
 
 export const generateFullStrategy = async (userInput: UserInput): Promise<FullStrategy> => {
-  const { businessName, category, product, city, goal, tone, platform, audience } = userInput;
+  const { businessName, category, product, city, goal, tone, platform, audience, socialMediaLink } = userInput;
+  
+  const inspirationPrompt = socialMediaLink 
+    ? `\n- Inspiration: Draw direct inspiration from the content, imagery, and style of their Instagram page: ${socialMediaLink}`
+    : '';
 
   const prompt = `
     As an expert Social Growth Co-Pilot, create a comprehensive, multi-faceted social media strategy for a small business. The entire output must be a single, valid JSON object that adheres to the provided schema, with all sections being thematically consistent and tailored to the user's business.
@@ -212,7 +273,7 @@ export const generateFullStrategy = async (userInput: UserInput): Promise<FullSt
     - Primary Platform: "${platform}"
     - Primary Goal: "${goal}"
     - Target Audience: "${audience}"
-    - Desired Tone: "${tone}"
+    - Desired Tone: "${tone}"${inspirationPrompt}
 
     Generate the following sections in the JSON response:
 
@@ -261,6 +322,10 @@ export const regenerateAlternatives = async (userInput: UserInput, posts: Social
         required: ["week_plan", "posts", "dm_template", "comment_reply_template", "weekly_experiment", "observations"]
     };
 
+    const inspirationPrompt = userInput.socialMediaLink 
+      ? `\n- Inspiration: Draw direct inspiration from the content, imagery, and style of their Instagram page: ${userInput.socialMediaLink}`
+      : '';
+
     const prompt = `
     As a learning Social Growth Assistant, you previously generated a social media plan. The user has provided feedback. Your task is to generate a NEW, improved plan that takes this feedback into account.
     The output must be a valid JSON object that adheres to the provided schema.
@@ -273,7 +338,7 @@ export const regenerateAlternatives = async (userInput: UserInput, posts: Social
     - Primary Platform: "${userInput.platform}"
     - Primary Goal: "${userInput.goal}"
     - Target Audience: "${userInput.audience}"
-    - Desired Tone: "${userInput.tone}"
+    - Desired Tone: "${userInput.tone}"${inspirationPrompt}
 
     User Feedback Analysis:
     - The user found these posts "USEFUL": ${usefulPosts.length > 0 ? JSON.stringify(usefulPosts, null, 2) : "None"}. Apply these successful patterns.
