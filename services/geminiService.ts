@@ -1,5 +1,5 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { UserInput, SocialPlan, SocialPost, FullStrategy } from '../types';
+import { GoogleGenAI, Type, Modality } from "@google/genai";
+import { UserInput, SocialPlan, SocialPost, FullStrategy, GeneratedImage } from '../types';
 
 if (!process.env.API_KEY) {
   throw new Error("API_KEY environment variable is not set.");
@@ -189,6 +189,39 @@ const userInputSchema = {
     required: ["businessName", "category", "product", "city", "goal", "tone", "platform", "audience"]
 };
 
+const generateImagesForPost = async (post: { image_prompt: string, platform: string, rationale: string }): Promise<GeneratedImage[]> => {
+    const numberOfImages = post.platform.toLowerCase().includes('instagram') ? 3 : 1;
+    const images: GeneratedImage[] = [];
+
+    // Use a loop that can be awaited sequentially if needed, but Promise.all is better for parallel generation.
+    // For simplicity and to avoid rate limiting issues, a simple loop is fine for now.
+    for (let i = 0; i < numberOfImages; i++) {
+        try {
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-image',
+                contents: { parts: [{ text: post.image_prompt }] },
+                config: {
+                    responseModalities: [Modality.IMAGE],
+                },
+            });
+
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    images.push({
+                        id: crypto.randomUUID(),
+                        base64: part.inlineData.data,
+                        description: post.image_prompt,
+                        rationale: post.rationale
+                    });
+                }
+            }
+        } catch (error) {
+            console.error(`Error generating image for prompt "${post.image_prompt}":`, error);
+        }
+    }
+    return images;
+};
+
 export const extractDetailsFromPrompt = async (prompt: string): Promise<UserInput> => {
     const generationPrompt = `
         Analyze the following user-provided business description and extract the specified details.
@@ -301,7 +334,26 @@ export const generateFullStrategy = async (userInput: UserInput): Promise<FullSt
         - "productInsight": A one-line insight about user behavior and upgrades.
   `;
 
-  return callGeminiApi(prompt);
+  const strategy = await callGeminiApi(prompt);
+
+  // Generate images for all posts in parallel
+  const socialPlanPostsWithImages = await Promise.all(
+    strategy.socialPlan.posts.map(async (post) => ({
+      ...post,
+      generated_images: await generateImagesForPost(post),
+    }))
+  );
+  strategy.socialPlan.posts = socialPlanPostsWithImages;
+
+  const performanceAnalysisPostsWithImages = await Promise.all(
+    strategy.performanceAnalysis.newPlanPosts.map(async (post) => ({
+      ...post,
+      generated_images: await generateImagesForPost(post),
+    }))
+  );
+  strategy.performanceAnalysis.newPlanPosts = performanceAnalysisPostsWithImages;
+
+  return strategy;
 };
 
 
@@ -362,14 +414,17 @@ export const regenerateAlternatives = async (userInput: UserInput, posts: Social
         });
         
         const jsonStr = response.text.trim();
-        const plan: Omit<SocialPlan, 'posts'> & { posts: Omit<SocialPost, 'id' | 'feedback'>[] } = JSON.parse(jsonStr);
+        const plan: Omit<SocialPlan, 'posts'> & { posts: Omit<SocialPost, 'id' | 'feedback' | 'generated_images'>[] } = JSON.parse(jsonStr);
 
-        const postsWithIds = plan.posts.map(post => ({
-            ...post,
-            id: crypto.randomUUID(),
-        }));
+        const postsWithIdsAndImages = await Promise.all(
+            plan.posts.map(async (post) => ({
+                ...post,
+                id: crypto.randomUUID(),
+                generated_images: await generateImagesForPost(post),
+            }))
+        );
 
-        return { ...plan, posts: postsWithIds };
+        return { ...plan, posts: postsWithIdsAndImages };
     } catch (error) {
         console.error("Error calling Gemini API for regeneration:", error);
         throw new Error("Could not regenerate social media plan from API.");

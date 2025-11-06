@@ -1,23 +1,15 @@
 import React from 'react';
 import { FullStrategy, UserInput, SocialPost } from '../types';
 import { MultiPlatformStrategy } from './MultiPlatformStrategy';
+import { MissionPost } from './MissionPost';
 
+// FIX: Added missing BoardProps interface definition.
 interface BoardProps {
     fullStrategy: FullStrategy;
     userInput: UserInput;
     onStartOver: () => void;
     onEditPlan: () => void;
 }
-
-const PlatformIcon: React.FC<{ platform: string, sizeClass?: string }> = ({ platform, sizeClass = 'text-lg' }) => {
-    const lowerPlatform = platform.toLowerCase();
-    if (lowerPlatform.includes('instagram')) return <i className={`fa-brands fa-instagram ${sizeClass}`} style={{color: '#E4405F'}}></i>;
-    if (lowerPlatform.includes('facebook')) return <i className={`fa-brands fa-facebook ${sizeClass}`} style={{color: '#1877F2'}}></i>;
-    if (lowerPlatform.includes('x') || lowerPlatform.includes('twitter')) return <i className={`fa-brands fa-twitter ${sizeClass}`} style={{color: '#1DA1F2'}}></i>;
-    if (lowerPlatform.includes('linkedin')) return <i className={`fa-brands fa-linkedin ${sizeClass}`} style={{color: '#0A66C2'}}></i>;
-    return <i className={`fa-solid fa-share-nodes ${sizeClass}`}></i>;
-};
-
 
 const BoardCard: React.FC<{ title: string; children: React.ReactNode; className?: string; icon?: string }> = ({ title, children, className, icon }) => (
     <div className={`bg-white border border-slate-200 rounded-xl p-6 shadow-sm ${className}`}>
@@ -61,15 +53,13 @@ export const Board: React.FC<BoardProps> = ({ fullStrategy, userInput, onStartOv
                 <BoardCard title="This Week's Mission" icon="fa-solid fa-bullseye text-indigo-500">
                     <div className="space-y-4">
                         <p className="text-sm text-slate-600 italic border-l-4 border-indigo-200 pl-3">"{socialPlan.week_plan}"</p>
-                        <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-slate-700">Planned Posts:</h4>
-                            {socialPlan.posts.slice(0, 4).map((post: SocialPost) => (
-                                <div key={post.id} className="flex items-center gap-3 text-sm bg-slate-50 p-2 rounded-md">
-                                    <PlatformIcon platform={post.platform} />
-                                    <span className="flex-grow text-slate-800 truncate">{post.title}</span>
-                                    <span className="text-xs text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">{post.suggested_time}</span>
-                                </div>
-                            ))}
+                        <div>
+                            <h4 className="text-sm font-semibold text-slate-700 mb-3">Planned Posts:</h4>
+                            <div className="space-y-3">
+                                {socialPlan.posts.slice(0, 4).map((post: SocialPost) => (
+                                    <MissionPost key={post.id} post={post} />
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </BoardCard>

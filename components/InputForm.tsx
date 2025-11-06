@@ -8,15 +8,15 @@ interface InputFormProps {
 }
 
 const defaultValues = {
-  businessName: 'Khatabook',
-  category: 'Financial services',
-  product: 'Accounting solution and loans',
+  businessName: 'Agni Yoga',
+  category: 'Yoga & Wellness',
+  product: 'Private & Group Yoga Lessons',
   city: 'Bangalore',
-  goal: 'Empower Indian MSMEs with smarter accounting and easy business loans',
-  tone: 'Professional and trustworthy',
+  goal: 'Lead Generation',
+  tone: 'Warm Tone',
   platform: 'Instagram & LinkedIn',
-  audience: 'Micro, Small, and Medium Enterprise (MSME) owners across India',
-  socialMediaLink: 'https://www.instagram.com/khata.book/, https://www.linkedin.com/company/khatabook/',
+  audience: 'Yoga enthusiasts and wellness seekers in Bangalore',
+  socialMediaLink: 'https://www.instagram.com/agniyogaindia/',
 };
 
 export const InputForm: React.FC<InputFormProps> = ({ onGenerate, isLoading, initialData }) => {
@@ -99,15 +99,15 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, isLoading, ini
        <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="businessName" className="block text-sm font-medium text-slate-700 mb-1">Business Name</label>
-              <input id="businessName" type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="e.g., Khatabook" className={inputClass} required disabled={isLoading} />
+              <input id="businessName" type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="e.g., Agni Yoga" className={inputClass} required disabled={isLoading} />
             </div>
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-              <input id="category" type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g., Financial Services" className={inputClass} required disabled={isLoading} />
+              <input id="category" type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g., Yoga & Wellness" className={inputClass} required disabled={isLoading} />
             </div>
             <div>
               <label htmlFor="product" className="block text-sm font-medium text-slate-700 mb-1">Product/Service</label>
-              <input id="product" type="text" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="e.g., Accounting solution" className={inputClass} required disabled={isLoading} />
+              <input id="product" type="text" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="e.g., Private & Group Yoga Lessons" className={inputClass} required disabled={isLoading} />
             </div>
             <div>
               <label htmlFor="city" className="block text-sm font-medium text-slate-700 mb-1">City</label>
@@ -115,7 +115,7 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, isLoading, ini
             </div>
              <div>
               <label htmlFor="tone" className="block text-sm font-medium text-slate-700 mb-1">Tone of Voice</label>
-              <input id="tone" type="text" value={tone} onChange={(e) => setTone(e.target.value)} placeholder="e.g., Professional, trustworthy" className={inputClass} required disabled={isLoading} />
+              <input id="tone" type="text" value={tone} onChange={(e) => setTone(e.target.value)} placeholder="e.g., Warm Tone" className={inputClass} required disabled={isLoading} />
             </div>
             <div>
               <label htmlFor="platform" className="block text-sm font-medium text-slate-700 mb-1">Primary Platform(s)</label>
@@ -127,11 +127,11 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, isLoading, ini
             </div>
             <div className="md:col-span-2">
               <label htmlFor="goal" className="block text-sm font-medium text-slate-700 mb-1">Primary Goal</label>
-              <input id="goal" type="text" value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="e.g., Empower MSMEs with accounting solutions" className={inputClass} required disabled={isLoading} />
+              <input id="goal" type="text" value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="e.g., Lead Generation" className={inputClass} required disabled={isLoading} />
             </div>
             <div className="md:col-span-2">
               <label htmlFor="audience" className="block text-sm font-medium text-slate-700 mb-1">Target Audience</label>
-              <input id="audience" type="text" value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="e.g., MSME owners across India" className={inputClass} required disabled={isLoading} />
+              <input id="audience" type="text" value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="e.g., Yoga enthusiasts in Bangalore" className={inputClass} required disabled={isLoading} />
             </div>
           </div>
       <button

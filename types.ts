@@ -1,3 +1,11 @@
+// types.ts
+
+export interface GeneratedImage {
+  id: string;
+  base64: string;
+  description: string;
+  rationale: string;
+}
 
 // FIX: Removed circular import of UserInput from the same file.
 export interface UserInput {
@@ -25,6 +33,7 @@ export interface SocialPost {
   feedback?: 'useful' | 'not useful';
   insight?: string;
   change?: string;
+  generated_images?: GeneratedImage[];
 }
 
 export interface SocialPlan {
