@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Modality } from "@google/genai";
+import { GoogleGenAI, Type, Modality, ThinkingLevel } from "@google/genai";
 import { UserInput, SocialPlan, SocialPost, FullStrategy, GeneratedImage } from '../types';
 
 if (!process.env.API_KEY) {
@@ -38,138 +38,37 @@ const socialPlanSchema = {
   required: ["week_plan", "posts", "dm_template", "comment_reply_template", "weekly_experiment", "observations"]
 };
 
-// ========== Performance Analysis Schema ==========
-const performanceAnalysisSchema = {
+// ========== Strategy Rationale Schema ==========
+const strategyRationaleSchema = {
     type: Type.OBJECT,
     properties: {
-        pastMetrics: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    likes: { type: Type.NUMBER },
-                    comments: { type: Type.NUMBER },
-                    dms: { type: Type.NUMBER },
-                    type: { type: Type.STRING },
-                },
-                required: ["title", "likes", "comments", "dms", "type"],
-            }
-        },
-        whatWorked: { type: Type.ARRAY, items: { type: Type.STRING } },
-        whatDidnt: { type: Type.ARRAY, items: { type: Type.STRING } },
-        newPlanPosts: { type: Type.ARRAY, items: postSchema },
-        aiInsightSummary: { type: Type.STRING },
+        whyItWorks: { type: Type.ARRAY, items: { type: Type.STRING } },
+        potentialChallenges: { type: Type.ARRAY, items: { type: Type.STRING } },
+        strategySummary: { type: Type.STRING },
     },
-    required: ["pastMetrics", "whatWorked", "whatDidnt", "newPlanPosts", "aiInsightSummary"],
+    required: ["whyItWorks", "potentialChallenges", "strategySummary"],
 };
-
-// ========== Multi-Platform Strategy Schema ==========
-const multiPlatformStrategySchema = {
-    type: Type.OBJECT,
-    properties: {
-        masterConcept: {
-            type: Type.OBJECT,
-            properties: {
-                title: { type: Type.STRING },
-                description: { type: Type.STRING },
-            },
-            required: ["title", "description"],
-        },
-        platformStrategies: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    platform: { type: Type.STRING },
-                    icon: { type: Type.STRING },
-                    color: { type: Type.STRING },
-                    focus: { type: Type.STRING },
-                    format: { type: Type.STRING },
-                    caption: { type: Type.STRING },
-                    hashtags: { type: Type.STRING },
-                    cta: { type: Type.STRING },
-                    time: { type: Type.STRING },
-                    rationale: { type: Type.STRING },
-                },
-                required: ["platform", "icon", "color", "focus", "format", "caption", "hashtags", "cta", "time", "rationale"],
-            }
-        }
-    },
-    required: ["masterConcept", "platformStrategies"],
-};
-
-// ========== Next Best Action Schema ==========
-const nextBestActionSchema = {
-    type: Type.OBJECT,
-    properties: {
-        scenario: { type: Type.STRING },
-        possibleActions: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    id: { type: Type.NUMBER },
-                    text: { type: Type.STRING },
-                    chosen: { type: Type.BOOLEAN },
-                },
-                required: ["id", "text", "chosen"],
-            }
-        },
-        justification: {
-            type: Type.OBJECT,
-            properties: {
-                why: { type: Type.STRING },
-                data: { type: Type.STRING },
-                logic: { type: Type.STRING },
-            },
-            required: ["why", "data", "logic"],
-        },
-        executedAction: {
-            type: Type.OBJECT,
-            properties: {
-                title: { type: Type.STRING },
-                post: {
-                    type: Type.OBJECT,
-                    properties: {
-                        platform: { type: Type.STRING },
-                        caption: { type: Type.STRING },
-                        hashtags: { type: Type.STRING },
-                    },
-                    required: ["platform", "caption", "hashtags"],
-                },
-            },
-            required: ["title", "post"],
-        },
-        upgradeTriggers: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    condition: { type: Type.STRING },
-                    message: { type: Type.STRING },
-                    value: { type: Type.STRING },
-                    timing: { type: Type.STRING },
-                },
-                required: ["condition", "message", "value", "timing"],
-            }
-        },
-        productInsight: { type: Type.STRING },
-    },
-    required: ["scenario", "possibleActions", "justification", "executedAction", "upgradeTriggers", "productInsight"],
-};
-
 
 // ========== Full Strategy Schema ==========
 const fullStrategySchema = {
     type: Type.OBJECT,
     properties: {
         socialPlan: socialPlanSchema,
-        performanceAnalysis: performanceAnalysisSchema,
-        multiPlatformStrategy: multiPlatformStrategySchema,
-        nextBestAction: nextBestActionSchema,
+        strategyRationale: strategyRationaleSchema,
+        otherChannelRecommendations: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    platform: { type: Type.STRING },
+                    reason: { type: Type.STRING },
+                    potential_impact: { type: Type.STRING },
+                },
+                required: ["platform", "reason", "potential_impact"],
+            }
+        }
     },
-    required: ["socialPlan", "performanceAnalysis", "multiPlatformStrategy", "nextBestAction"]
+    required: ["socialPlan", "strategyRationale", "otherChannelRecommendations"]
 };
 
 // ========== User Input Schema for Prompt Parsing ==========
@@ -190,12 +89,10 @@ const userInputSchema = {
 };
 
 const generateImagesForPost = async (post: { image_prompt: string, platform: string, rationale: string }): Promise<GeneratedImage[]> => {
-    const numberOfImages = post.platform.toLowerCase().includes('instagram') ? 3 : 1;
-    const images: GeneratedImage[] = [];
-
-    // Use a loop that can be awaited sequentially if needed, but Promise.all is better for parallel generation.
-    // For simplicity and to avoid rate limiting issues, a simple loop is fine for now.
-    for (let i = 0; i < numberOfImages; i++) {
+    const numberOfImages = 1; // Reduced to 1 for faster generation
+    
+    // Parallelize image generation for each post
+    const imagePromises = Array.from({ length: numberOfImages }).map(async (): Promise<GeneratedImage | null> => {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash-image',
@@ -205,21 +102,23 @@ const generateImagesForPost = async (post: { image_prompt: string, platform: str
                 },
             });
 
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    images.push({
-                        id: crypto.randomUUID(),
-                        base64: part.inlineData.data,
-                        description: post.image_prompt,
-                        rationale: post.rationale
-                    });
-                }
+            const part = response.candidates[0].content.parts.find(p => p.inlineData);
+            if (part?.inlineData) {
+                return {
+                    id: crypto.randomUUID() as string,
+                    base64: part.inlineData.data,
+                    description: post.image_prompt,
+                    rationale: post.rationale
+                };
             }
         } catch (error) {
             console.error(`Error generating image for prompt "${post.image_prompt}":`, error);
         }
-    }
-    return images;
+        return null;
+    });
+
+    const results = await Promise.all(imagePromises);
+    return results.filter((img): img is GeneratedImage => img !== null);
 };
 
 export const extractDetailsFromPrompt = async (prompt: string): Promise<UserInput> => {
@@ -265,12 +164,13 @@ export const extractDetailsFromPrompt = async (prompt: string): Promise<UserInpu
 const callGeminiApi = async (prompt: string): Promise<FullStrategy> => {
     try {
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3-flash-preview',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
             responseSchema: fullStrategySchema,
             temperature: 0.8,
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
           }
         });
         
@@ -279,7 +179,6 @@ const callGeminiApi = async (prompt: string): Promise<FullStrategy> => {
 
         // Add unique IDs to posts for React keys
         strategy.socialPlan.posts = strategy.socialPlan.posts.map(p => ({ ...p, id: crypto.randomUUID() }));
-        strategy.performanceAnalysis.newPlanPosts = strategy.performanceAnalysis.newPlanPosts.map(p => ({ ...p, id: crypto.randomUUID() }));
 
         return strategy;
     } catch (error) {
@@ -312,47 +211,33 @@ export const generateFullStrategy = async (userInput: UserInput): Promise<FullSt
 
     1. "socialPlan": A complete 7-day social media plan.
         - "week_plan": A one-sentence objective.
-        - "posts": An array of 4 ready-to-post items for Instagram, Facebook, X.com, and LinkedIn.
+        - "posts": An array of 3 ready-to-post items. IMPORTANT: Prioritize the platforms specified in the "Primary Platform" field: "${platform}". Ensure at least one post is created for each specified platform if possible.
         - "dm_template", "comment_reply_template", "weekly_experiment", "observations": All tailored to the business.
 
-    2. "performanceAnalysis": A SIMULATED analysis of a hypothetical previous week to demonstrate learning.
-        - "pastMetrics": Create 3 plausible past posts with realistic metrics (likes, comments, DMs) for this business. One should be a clear winner.
-        - "whatWorked" & "whatDidnt": Analyze the metrics you just created.
-        - "newPlanPosts": Generate 2 NEW posts that are a direct improvement based on your analysis. Include "insight" and "change" fields explaining your reasoning.
-        - "aiInsightSummary": A one-line summary of the key learning.
+    2. "strategyRationale": An explanation of why this specific plan was chosen.
+        - "whyItWorks": A list of 3-4 reasons why these specific suggestions and post types will be effective for this business and goal.
+        - "potentialChallenges": A list of 2-3 things that might NOT work or hurdles the business might face with this strategy.
+        - "strategySummary": A one-line summary of the overall growth logic.
 
-    3. "multiPlatformStrategy": Adapt a single master concept for different platforms.
-        - "masterConcept": Create one core post idea relevant to the business (e.g., for a bakery, 'Behind the scenes of our sourdough').
-        - "platformStrategies": Adapt this concept for Instagram (visual/story), LinkedIn (professional/value), and Facebook (community/local), detailing the different captions, formats, CTAs, etc. For "icon", use font-awesome class names (e.g., "fa-brands fa-instagram"). For "color", use hex codes.
-
-    4. "nextBestAction": Propose and simulate an autonomous action.
-        - "scenario": Write a brief scenario based on the generated social plan (e.g., 'Two posts performed well, driving high-intent DMs').
-        - "possibleActions": List 4 plausible next actions, with one marked as "chosen: true".
-        - "justification": Explain why the chosen action is the most impactful, using the data from your scenario.
-        - "executedAction": Generate the content for the chosen action (e.g., the full text for a limited-time offer post).
-        - "upgradeTriggers": Create two contextual upgrade triggers with conditions and persuasive copy.
-        - "productInsight": A one-line insight about user behavior and upgrades.
+    3. "otherChannelRecommendations": Recommend 2-3 additional social media platforms that were NOT specified in the "Primary Platform" field but would be highly beneficial for this specific business.
+        - "platform": The name of the recommended platform.
+        - "reason": Why this platform is a good fit.
+        - "potential_impact": What the business can expect to achieve there.
   `;
 
   const strategy = await callGeminiApi(prompt);
 
-  // Generate images for all posts in parallel
+  // Generate images for ONLY the main social plan posts to reduce request count and avoid quota issues
   const socialPlanPostsWithImages = await Promise.all(
     strategy.socialPlan.posts.map(async (post) => ({
       ...post,
       generated_images: await generateImagesForPost(post),
     }))
   );
+
   strategy.socialPlan.posts = socialPlanPostsWithImages;
-
-  const performanceAnalysisPostsWithImages = await Promise.all(
-    strategy.performanceAnalysis.newPlanPosts.map(async (post) => ({
-      ...post,
-      generated_images: await generateImagesForPost(post),
-    }))
-  );
-  strategy.performanceAnalysis.newPlanPosts = performanceAnalysisPostsWithImages;
-
+  // Performance analysis posts will remain text-only to save quota as requested
+  
   return strategy;
 };
 
@@ -397,19 +282,20 @@ export const regenerateAlternatives = async (userInput: UserInput, posts: Social
     - The user found these posts "NOT USEFUL": ${notUsefulPosts.length > 0 ? JSON.stringify(notUsefulPosts, null, 2) : "None"}. Avoid these characteristics.
     
     Instructions:
-    - Generate a completely new set of 4 posts for different platforms.
+    - Generate a completely new set of 3 posts. IMPORTANT: Prioritize the platforms specified in the "Primary Platform" field: "${userInput.platform}". Ensure at least one post is created for each specified platform if possible.
     - These new posts MUST strongly align with the 'USEFUL' examples and avoid the traits of the 'NOT USEFUL' examples.
     - Generate a new "week_plan", "dm_template", "comment_reply_template", "weekly_experiment", and "observations" improved by this feedback.
   `;
 
   try {
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3-flash-preview',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
             responseSchema: singleCallSchema,
             temperature: 0.8,
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
           }
         });
         

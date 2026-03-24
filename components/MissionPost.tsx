@@ -38,7 +38,7 @@ export const MissionPost: React.FC<{ post: SocialPost }> = ({ post }) => {
                                 aria-pressed={selectedImageId === image.id}
                                 aria-label={`Select image: ${image.description}`}
                             >
-                                <img src={`data:image/png;base64,${image.base64}`} alt={image.description} className="w-full h-24 object-cover" />
+                                <img src={`data:image/png;base64,${image.base64}`} alt={image.description} className="w-full h-24 object-cover" referrerPolicy="no-referrer" />
                                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center">
                                     <i className="fa-solid fa-magnifying-glass text-white text-lg opacity-0 group-hover:opacity-100 transition-opacity"></i>
                                 </div>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { FullStrategy, UserInput, SocialPost } from '../types';
-import { MultiPlatformStrategy } from './MultiPlatformStrategy';
 import { MissionPost } from './MissionPost';
 
 // FIX: Added missing BoardProps interface definition.
@@ -22,7 +21,7 @@ const BoardCard: React.FC<{ title: string; children: React.ReactNode; className?
 );
 
 export const Board: React.FC<BoardProps> = ({ fullStrategy, userInput, onStartOver, onEditPlan }) => {
-    const { socialPlan, performanceAnalysis, nextBestAction, multiPlatformStrategy } = fullStrategy;
+    const { socialPlan, strategyRationale } = fullStrategy;
 
     return (
         <div className="space-y-8 animate-fade-in">
@@ -48,8 +47,8 @@ export const Board: React.FC<BoardProps> = ({ fullStrategy, userInput, onStartOv
                 </div>
             </header>
 
-            {/* Top Section: 3 Columns */}
-            <div className="grid md:grid-cols-3 gap-6">
+            {/* Top Section: 2 Columns */}
+            <div className="grid md:grid-cols-2 gap-6">
                 <BoardCard title="This Week's Mission" icon="fa-solid fa-bullseye text-indigo-500">
                     <div className="space-y-4">
                         <p className="text-sm text-slate-600 italic border-l-4 border-indigo-200 pl-3">"{socialPlan.week_plan}"</p>
@@ -58,42 +57,30 @@ export const Board: React.FC<BoardProps> = ({ fullStrategy, userInput, onStartOv
                             <div className="space-y-3">
                                 {socialPlan.posts.slice(0, 4).map((post: SocialPost) => (
                                     <MissionPost key={post.id} post={post} />
-                                ))}
+                                )) || []}
                             </div>
                         </div>
                     </div>
                 </BoardCard>
-                <BoardCard title="Last Week's Performance" icon="fa-solid fa-chart-line text-green-500">
+                <BoardCard title="Strategy Rationale" icon="fa-solid fa-brain text-indigo-500">
                     <div className="space-y-4 text-sm">
-                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg">
-                           <p><strong className="font-semibold">AI Insight:</strong> {performanceAnalysis.aiInsightSummary}</p>
+                        <div className="bg-indigo-50 border border-indigo-200 text-indigo-800 p-3 rounded-lg">
+                           <p><strong className="font-semibold">AI Summary:</strong> {strategyRationale.strategySummary}</p>
                         </div>
                         <div>
-                            <h4 className="font-semibold text-green-700 mb-1">What Worked:</h4>
+                            <h4 className="font-semibold text-green-700 mb-1">Why This Works:</h4>
                             <ul className="list-disc list-inside text-slate-600 space-y-1">
-                                {performanceAnalysis.whatWorked.slice(0, 2).map((item, i) => <li key={i}>{item}</li>)}
+                                {strategyRationale.whyItWorks.map((item, i) => <li key={i}>{item}</li>)}
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-semibold text-red-700 mb-1">What Didn't:</h4>
+                            <h4 className="font-semibold text-red-700 mb-1">Potential Challenges:</h4>
                             <ul className="list-disc list-inside text-slate-600 space-y-1">
-                                {performanceAnalysis.whatDidnt.slice(0, 2).map((item, i) => <li key={i}>{item}</li>)}
+                                {strategyRationale.potentialChallenges.map((item, i) => <li key={i}>{item}</li>)}
                             </ul>
                         </div>
                     </div>
                 </BoardCard>
-                 <BoardCard title="Take Action" icon="fa-solid fa-rocket text-purple-500">
-                     <div className="space-y-4 text-sm">
-                        <p className="text-slate-600">The AI suggests this as your most impactful next step:</p>
-                        <div className="bg-purple-50 border border-purple-200 text-purple-800 p-4 rounded-lg">
-                            <p className="font-bold text-md mb-2">{nextBestAction.executedAction.title}</p>
-                            <p className="text-xs italic">"{nextBestAction.justification.why}"</p>
-                        </div>
-                        <button className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-3 rounded-md transition-colors text-sm">
-                            Review & Execute Action
-                        </button>
-                    </div>
-                 </BoardCard>
             </div>
 
             {/* Bottom Section: 2 Rows */}
@@ -127,9 +114,25 @@ export const Board: React.FC<BoardProps> = ({ fullStrategy, userInput, onStartOv
                     </div>
                  </BoardCard>
 
-                 <div>
-                    <MultiPlatformStrategy data={multiPlatformStrategy} />
-                 </div>
+                 {fullStrategy.otherChannelRecommendations && fullStrategy.otherChannelRecommendations.length > 0 && (
+                    <BoardCard title="Expansion Opportunities" icon="fa-solid fa-map-location-dot text-orange-500">
+                        <div className="grid md:grid-cols-3 gap-4">
+                            {fullStrategy.otherChannelRecommendations.map((rec, i) => (
+                                <div key={i} className="bg-orange-50 border border-orange-100 p-4 rounded-xl">
+                                    <h4 className="font-bold text-orange-800 flex items-center gap-2 mb-2">
+                                        <i className="fa-solid fa-plus-circle text-xs"></i>
+                                        {rec.platform}
+                                    </h4>
+                                    <p className="text-xs text-slate-700 mb-2 leading-relaxed">{rec.reason}</p>
+                                    <div className="flex items-center gap-2 mt-auto pt-2 border-t border-orange-200/50">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600">Impact:</span>
+                                        <span className="text-[10px] text-orange-700 font-medium">{rec.potential_impact}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </BoardCard>
+                 )}
             </div>
         </div>
     );

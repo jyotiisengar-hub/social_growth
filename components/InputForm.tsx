@@ -8,19 +8,18 @@ interface InputFormProps {
 }
 
 const defaultValues = {
-  businessName: 'Agni Yoga',
-  category: 'Yoga & Wellness',
-  product: 'Private & Group Yoga Lessons',
-  city: 'Bangalore',
-  goal: 'Lead Generation',
-  tone: 'Warm Tone',
-  platform: 'Instagram & LinkedIn',
-  audience: 'Yoga enthusiasts and wellness seekers in Bangalore',
-  socialMediaLink: 'https://www.instagram.com/agniyogaindia/',
+  businessName: 'The Coffee Bean & Tea Leaf Singapore',
+  category: 'Food & Beverage',
+  product: 'Specialty coffee, tea beverages, café food, and seasonal offerings',
+  city: 'Singapore',
+  goal: 'Drive footfall and in-store purchases',
+  tone: 'Warm, inviting, and lifestyle-focused',
+  platform: 'Instagram and Facebook',
+  audience: 'Urban professionals and young adults in Singapore looking for quality coffee, casual meetups, and quick café experiences',
+  socialMediaLink: 'https://www.instagram.com/coffeebeansg/',
 };
 
 export const InputForm: React.FC<InputFormProps> = ({ onGenerate, isLoading, initialData }) => {
-  const [prompt, setPrompt] = useState('');
   const [businessName, setBusinessName] = useState(defaultValues.businessName);
   const [category, setCategory] = useState(defaultValues.category);
   const [product, setProduct] = useState(defaultValues.product);
@@ -58,9 +57,7 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, isLoading, ini
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (prompt) {
-      onGenerate(prompt);
-    } else if (businessName && category && product && city && goal && tone && platform && audience) {
+    if (businessName && category && product && city && goal && tone && platform && audience) {
       onGenerate({ businessName, category, product, city, goal, tone, platform, audience, socialMediaLink });
     }
   };
@@ -69,32 +66,10 @@ export const InputForm: React.FC<InputFormProps> = ({ onGenerate, isLoading, ini
 
   return (
     <form onSubmit={handleSubmit} className="p-6 bg-white border border-slate-200 rounded-xl shadow-lg space-y-6">
-      <div>
-        <label htmlFor="prompt" className="sr-only">Tell me about your business</label>
-        <div className="relative">
-          <textarea
-            id="prompt"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Tell me about your business — I’ll create your next 7 days of growth."
-            className="w-full bg-slate-50 border border-slate-300 rounded-md py-3 px-4 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition disabled:bg-slate-200 disabled:cursor-not-allowed resize-none"
-            rows={3}
-            disabled={isLoading}
-          />
-          <div className="absolute top-3.5 right-3.5 text-slate-400">
-             <i className="fa-solid fa-microphone"></i>
-          </div>
-        </div>
+      <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 text-slate-600 text-sm leading-relaxed">
+        This is a Social Media Growth Assistant prototype that could be used to create content and engagement through new posts suggestions. Fill in the existing business details and your target audience
       </div>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-slate-300" />
-        </div>
-        <div className="relative flex justify-center">
-          <span className="bg-white px-2 text-sm font-medium text-slate-500">OR</span>
-        </div>
-      </div>
       
        <div className="grid md:grid-cols-2 gap-4">
             <div>

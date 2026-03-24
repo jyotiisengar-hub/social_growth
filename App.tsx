@@ -3,7 +3,6 @@ import { Header } from './components/Header';
 import { InputForm } from './components/InputForm';
 import { Board } from './components/Board';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { FutureVision } from './components/FutureVision';
 import { SidebarNav } from './components/SidebarNav';
 import { generateFullStrategy, extractDetailsFromPrompt } from './services/geminiService';
 import { FullStrategy, UserInput } from './types';
@@ -31,7 +30,7 @@ const SmartSetupTiles = () => (
 
 
 const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<'home' | 'progress' | 'vision'>('home');
+  const [activeView, setActiveView] = useState<'home' | 'progress'>('home');
   const [fullStrategy, setFullStrategy] = useState<FullStrategy | null>(null);
   const [currentUserInput, setCurrentUserInput] = useState<UserInput | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -95,13 +94,6 @@ const App: React.FC = () => {
                     <p className="text-sm">{error}</p>
                   </div>
                 )}
-               {!isLoading && !fullStrategy && !error && (
-                   <div className="text-center text-slate-500 py-16">
-                     <i className="fa-solid fa-wand-magic-sparkles text-4xl mb-4"></i>
-                     <p>Your social media plan will appear here.</p>
-                     <p className="text-sm">Fill out the form above to get started!</p>
-                   </div>
-                )}
             </div>
         </div>
         <div className="lg:col-span-1 hidden lg:block pt-2">
@@ -130,8 +122,6 @@ const App: React.FC = () => {
         // Fallback to home if progress isn't ready
         setActiveView('home');
         return renderHome();
-      case 'vision':
-        return <FutureVision />;
       default:
         return renderHome();
     }

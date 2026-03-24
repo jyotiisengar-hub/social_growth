@@ -1,6 +1,6 @@
 import React from 'react';
 
-type View = 'home' | 'progress' | 'vision';
+type View = 'home' | 'progress';
 
 interface SidebarNavProps {
     activeView: View;
@@ -62,13 +62,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeView, setActiveVie
                     activeView={activeView}
                     onClick={setActiveView}
                     disabled={!isProgressAvailable}
-                />
-                 <NavItem 
-                    view="vision"
-                    label="Future Vision"
-                    icon="fa-solid fa-star"
-                    activeView={activeView}
-                    onClick={setActiveView}
                 />
             </div>
         </nav>
